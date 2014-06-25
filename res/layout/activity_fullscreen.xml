@@ -1,0 +1,78 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0099cc"
+    tools:context="com.example.androidproject.FullscreenActivity" >
+
+    <!--
+         The primary full-screen view. This can be replaced with whatever view
+         is needed to present your content, e.g. VideoView, SurfaceView,
+         TextureView, etc.
+    -->
+
+    <!--
+         This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows.
+    -->
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="20dp" >
+
+        <FrameLayout
+            android:id="@+id/main_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@color/black_overlay"
+            android:fitsSystemWindows="true"
+            android:paddingTop="10dp" >
+
+            <LinearLayout
+                android:id="@+id/fullscreen_content_controls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                tools:ignore="UselessParent" >
+
+                <Button
+                    android:id="@+id/play_button"
+                    style="?metaButtonBarButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_weight="1"
+                    android:text="@string/play_button"
+                    android:onClick="playButtonClick" />
+
+                <Button
+                    android:id="@+id/info_button"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:onClick="infoButtonClick"
+                    android:text="@string/info_button" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/info_screen"
+            style="?metaButtonBarStyle"
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="right"
+            android:background="@color/black_overlay" >
+        </FrameLayout>
+    </FrameLayout>
+
+</FrameLayout>
