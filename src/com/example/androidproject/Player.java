@@ -19,8 +19,9 @@ public class Player extends GameObject{
 	/**
 	 * Constructor
 	 */
-	public Player(){
-		
+	public Player(int appletWidth_, int appletHeight_){
+		appletWidth = appletWidth_;
+		appletHeight = appletHeight_;
 		//Test
 		type = "player";
 		damage = 1;
@@ -37,9 +38,9 @@ public class Player extends GameObject{
 		currentAttackCycle = 0;
 		xSpeed = 0;
 		ySpeed = 0;
-		xSpeedMax = 5;
-		ySpeedMax = 5;
-		acc = 0.5;
+		xSpeedMax = 7;
+		ySpeedMax = 7;
+		maxAcc = 0.5;
 		friction = 0.95;
 		collisionCooldown = 180;
 		tempColCooldown = 0;
@@ -53,18 +54,20 @@ public class Player extends GameObject{
 	@Override
 	protected void move(){
 		//Check each activated direction
-		if (right && (xSpeed + acc) < xSpeedMax){
-			xSpeed += acc;
+		/*
+		if (right && (xSpeed + maxAcc) < xSpeedMax){
+			xSpeed += maxAcc;
 		}
-		if (left && (xSpeed - acc) > xSpeedMax*-1){
-			xSpeed -= acc;
+		if (left && (xSpeed - maxAcc) > xSpeedMax*-1){
+			xSpeed -= maxAcc;
 		}
-		if (down && (ySpeed + acc) < ySpeedMax){
-			ySpeed += acc;
+		if (down && (ySpeed + maxAcc) < ySpeedMax){
+			ySpeed += maxAcc;
 		}
-		if (up && (ySpeed - acc) > ySpeedMax*-1){
-			ySpeed -= acc;
+		if (up && (ySpeed - maxAcc) > ySpeedMax*-1){
+			ySpeed -= maxAcc;
 		}
+		*/
 		//Decrease speed based on friction
 		xSpeed *= friction;
 		ySpeed *= friction;
@@ -90,11 +93,11 @@ public class Player extends GameObject{
 			xPos = appletWidth-width;
 			xSpeed = 0;
 		}
-		if ((ySpeed < 0 && (yPos + ySpeed) > 26)){
+		if ((ySpeed < 0 && (yPos + ySpeed) > 0)){
 			yPos += ySpeed;
 		}
-		else if ((ySpeed < 0 && (yPos + ySpeed) <= 26)){
-			yPos = 26;
+		else if ((ySpeed < 0 && (yPos + ySpeed) <= 0)){
+			yPos = 0;
 			ySpeed = 0;
 		}
 		if (ySpeed > 0 && (ySpeed + yPos + height) < appletHeight){
@@ -150,7 +153,7 @@ public class Player extends GameObject{
 		controllable = false;
 		stopMoving();
 		//Test
-//		visible = false;
+		visible = false;
 		blinking = false;
 		
 		//Respawn player after a certain time
@@ -159,9 +162,11 @@ public class Player extends GameObject{
 		//Set player y-position to middle of window
 		ySpeed = 0;
 		xSpeed = 0;
-		yPos = appletHeight/2-height/2;
-		xPos = 200;
+		yPos = appletHeight*0.9;
+		xPos = appletWidth/2-width/2;
+		System.out.println("Player life: " + lives);
 	}
+	
 	/**
 	 * Timer that handles the respawn function for the player.
 	 * -1: Respawn function does nothing

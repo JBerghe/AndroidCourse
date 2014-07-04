@@ -15,7 +15,7 @@ import com.example.androidproject.util.SystemUiHider;
  * @see SystemUiHider
  */
 public class FullscreenActivity extends Activity {
-	public final static String EXTRA_MESSAGE = "com-example.androidproject";
+	public final static String EXTRA_MESSAGE = "com.example.androidproject";
 	private boolean toggleInfoScreen = true;
 	FrameLayout fl;
 	@Override

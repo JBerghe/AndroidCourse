@@ -15,7 +15,7 @@ public class GameObject {
 	protected int maxHealth;
 	protected double xPos;
 	protected double yPos;
-	protected int lives;
+	protected int lives = 1;
 	protected int health;
 	protected int width;
 	protected int height;
@@ -37,6 +37,7 @@ public class GameObject {
 	protected double xSpeedMax;
 	protected double ySpeedMax;
 	protected double friction;
+	protected double maxAcc;
 	/**
 	 * Constructor
 	 * @param xPos_
@@ -44,7 +45,10 @@ public class GameObject {
 	 * @param width_
 	 * @param height_
 	 */
-	public GameObject(int xPos_, int yPos_, int width_, int height_){
+	public GameObject(int xPos_, 
+			int yPos_, 
+			int width_, 
+			int height_){
 		xPos = xPos_;
 		yPos = yPos_;
 		width = width_;
@@ -120,7 +124,7 @@ public class GameObject {
 		//If blinking has been turned on and the unit is not collidable
 		if (blinking && collideable == false){
 			//Blinking rate
-			if (blinkCycle <= 5){
+			if (blinkCycle <= 2){
 				blinkCycle++;
 			}
 			//Every time the blinking cycle resets
@@ -178,7 +182,7 @@ public class GameObject {
 //		System.out.println(getClass().toString());
 		if (shotReady == true && firing == true){
 			//Temp
-			System.out.println("FIRE: " + getClass());
+			//System.out.println("FIRE: " + getClass());
 		}
 		else{
 		}
@@ -187,7 +191,64 @@ public class GameObject {
 	 * Method for making the object lose a life and reset its health to max
 	 */
 	protected void loseLife(){
+		System.out.println(this.type + " LOST life");
 		lives--;
 		health = maxHealth;
+	}
+	protected void incrementXSpeed(double d){
+		if(d > 0){
+			if((xSpeed + maxAcc) <= xSpeedMax){
+				if(d <= maxAcc){
+					xSpeed += d;
+				}
+				else{
+					xSpeed += maxAcc;
+				}
+			}
+			else{
+				xSpeed = xSpeedMax;
+			}
+		}
+		else if(d < 0){
+			if((xSpeed + maxAcc*1) >= xSpeedMax*-1){
+				if(d >= maxAcc*-1){
+					xSpeed += d;
+				}
+				else{
+					xSpeed += maxAcc*-1;
+				}
+			}
+			else{
+				xSpeed = xSpeedMax*-1;
+			}
+		}
+	}
+	protected void incrementYSpeed(double d){
+		if(d > 0){
+			if((ySpeed + maxAcc) <= ySpeedMax){
+				if(d <= maxAcc){
+					ySpeed += d;
+				}
+				else{
+					ySpeed +=maxAcc;
+				}
+			}
+			else{
+				ySpeed = ySpeedMax;
+			}
+		}
+		else if(d < 0){
+			if((ySpeed + maxAcc*1) >= ySpeedMax*-1){
+				if(d >= maxAcc*-1){
+					ySpeed += d;
+				}
+				else{
+					ySpeed += maxAcc*-1;
+				}
+			}
+			else{
+				ySpeed = ySpeedMax*-1;
+			}
+		}
 	}
 }

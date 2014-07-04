@@ -1,6 +1,7 @@
 package com.example.androidproject;
 
 
+
 /**
  * Class for enemies. The class itself acts as a generator, the class will return enemies whenever it's called.
  * @author Joel
@@ -8,7 +9,13 @@ package com.example.androidproject;
 public class EnemyGenerator extends GameObject{
 	//Placeholder for each enemy
 	private GameObject enemy_;
+	private int appletWidth;
+	private int appletHeight;
 	
+	public EnemyGenerator(int appletWidth_, int appletHeight_){
+		appletWidth = appletWidth_;
+		appletHeight = appletHeight_;
+	}
 	
 	private class en1 extends GameObject{
 		private en1(){
@@ -18,10 +25,11 @@ public class EnemyGenerator extends GameObject{
 			currentAttackCycle = 0;
 			attackCycle = 100;
 			friction = 1;
-			xSpeed = -3;
+			ySpeed = 3;
 			health = 1;
-			width = 70;
-			height = 40;
+			lives = 1;
+			width = 50;
+			height = 20;
 		}
 	}
 	
@@ -34,6 +42,7 @@ public class EnemyGenerator extends GameObject{
 	public GameObject getEnemy(enemyType id_, int xPos_){
 		setInitValues(id_);
 		enemy_.xPos = xPos_;
+		enemy_.yPos = enemy_.height*-1;
 		
 		return (GameObject) enemy_;
 	}
@@ -45,10 +54,10 @@ public class EnemyGenerator extends GameObject{
 	 * @param flipped_
 	 * @return
 	 */
-	public GameObject getFlippedEnemy(enemyType id_, int yPos_){
-		enemy_ = getEnemy (id_, yPos_);
+	public GameObject getFlippedEnemy(enemyType id_, int xPos_){
+		enemy_ = getEnemy (id_, xPos_);
 		enemy_.ySpeed *= -1;
-		enemy_.yPos = enemy_.height*-1;
+		enemy_.yPos = appletHeight+enemy_.height;
 		return (GameObject) enemy_;
 	}
 	/**
@@ -73,4 +82,5 @@ public class EnemyGenerator extends GameObject{
 		//Enemy will start from the right
 		enemy_.xPos = appletWidth;
 	}
+	
 }
