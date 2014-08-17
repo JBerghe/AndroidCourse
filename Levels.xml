@@ -1,0 +1,10 @@
+<level1>
+	<group>
+		<type>en1</type>
+		<amount>1</amount>
+		<distance>10</distance>
+		<flipped>false</flipped>
+		<time>50</time>
+		<xpos>50</xpos>
+	</group>
+</level1>

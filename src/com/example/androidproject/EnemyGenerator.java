@@ -19,17 +19,21 @@ public class EnemyGenerator extends GameObject{
 	
 	private class en1 extends GameObject{
 		private en1(){
-			shotReady = true;
+			shotReady = false;
 			damage = 1;
-			firing = true;
+			firing = false;
 			currentAttackCycle = 0;
-			attackCycle = 100;
+			attackFrequency = 100;
 			friction = 1;
 			ySpeed = 3;
 			health = 1;
 			lives = 1;
 			width = 50;
 			height = 20;
+			collisionHeight = height;
+			collisionWidth = width;
+			imageResource = R.drawable.test_image;
+			usingImageResource = true;
 		}
 	}
 	
@@ -47,10 +51,10 @@ public class EnemyGenerator extends GameObject{
 		return (GameObject) enemy_;
 	}
 	/**
-	 * Method that will return a desired enemy at the given Y position. If the boolean is set to true,
-	 * the enemy will instead spawn at the left side of the screen and go to the right.
+	 * Method that will return a desired enemy at the given Y position. If the flip boolean is set to true,
+	 * the enemy will instead spawn at the bottom of the screen and go towards the top.
 	 * @param id_
-	 * @param yPos_
+	 * @param xPos_
 	 * @param flipped_
 	 * @return
 	 */

@@ -1,6 +1,7 @@
 package com.example.androidproject;
 
 
+
 /**
  * Class containing all variables and controls for the player.
  * @author Joel
@@ -20,22 +21,22 @@ public class Player extends GameObject{
 	 * Constructor
 	 */
 	public Player(int appletWidth_, int appletHeight_){
-		appletWidth = appletWidth_;
-		appletHeight = appletHeight_;
+		screenWidth = appletWidth_;
+		screenHeight = appletHeight_;
 		//Test
-		type = "player";
+		type = "ally";
 		damage = 1;
 		collideable = false;
 		blinking = true;
-		health = 2;
 		maxHealth = 3;
+		health = maxHealth;
 		lives = 2;
-		xPos = 200;
-		yPos = appletHeight/2-height/2;
-		width = 70;
+		width = 40;
 		height = 40;
-		attackCycle = 100;
+		attackFrequency = 15;
 		currentAttackCycle = 0;
+		yPos = screenHeight-height;
+		xPos = screenWidth/2;
 		xSpeed = 0;
 		ySpeed = 0;
 		xSpeedMax = 7;
@@ -43,7 +44,11 @@ public class Player extends GameObject{
 		maxAcc = 0.5;
 		friction = 0.95;
 		collisionCooldown = 180;
+		collisionHeight = 20;
+		collisionWidth = 30;
 		tempColCooldown = 0;
+		imageResource = R.drawable.test_image;
+		usingImageResource = true;
 	}
 	@Override
 	protected void action(){
@@ -53,21 +58,6 @@ public class Player extends GameObject{
 	}
 	@Override
 	protected void move(){
-		//Check each activated direction
-		/*
-		if (right && (xSpeed + maxAcc) < xSpeedMax){
-			xSpeed += maxAcc;
-		}
-		if (left && (xSpeed - maxAcc) > xSpeedMax*-1){
-			xSpeed -= maxAcc;
-		}
-		if (down && (ySpeed + maxAcc) < ySpeedMax){
-			ySpeed += maxAcc;
-		}
-		if (up && (ySpeed - maxAcc) > ySpeedMax*-1){
-			ySpeed -= maxAcc;
-		}
-		*/
 		//Decrease speed based on friction
 		xSpeed *= friction;
 		ySpeed *= friction;
@@ -86,11 +76,11 @@ public class Player extends GameObject{
 			xPos = 0;
 			xSpeed = 0;
 		}
-		if (xSpeed > 0 && (xSpeed + xPos + width) < appletWidth){
+		if (xSpeed > 0 && (xSpeed + xPos + width) < screenWidth){
 			xPos += xSpeed;
 		}
-		else if(xSpeed > 0 && (xSpeed + xPos + width) >= appletWidth){
-			xPos = appletWidth-width;
+		else if(xSpeed > 0 && (xSpeed + xPos + width) >= screenWidth){
+			xPos = screenWidth-width;
 			xSpeed = 0;
 		}
 		if ((ySpeed < 0 && (yPos + ySpeed) > 0)){
@@ -100,11 +90,11 @@ public class Player extends GameObject{
 			yPos = 0;
 			ySpeed = 0;
 		}
-		if (ySpeed > 0 && (ySpeed + yPos + height) < appletHeight){
+		if (ySpeed > 0 && (ySpeed + yPos + height) < screenHeight){
 			yPos += ySpeed;
 		}
-		else if(ySpeed > 0 && (ySpeed + yPos + height) >= appletHeight){
-			yPos = appletHeight-height;
+		else if(ySpeed > 0 && (ySpeed + yPos + height) >= screenHeight){
+			yPos = screenHeight-height;
 			ySpeed = 0;
 		}
 	}
@@ -128,17 +118,7 @@ public class Player extends GameObject{
 			
 		}
 	}
-	/**
-	 * Check if player is collidable yet.
-	 */
-	private void updateCollisionCooldown(){
-		if (tempColCooldown < collisionCooldown){
-			tempColCooldown++;
-		}
-		else{
-			collideable = true;
-		}
-	}
+	
 	/**
 	 * Overriden method for losing a life. The player's plane is "destroyed" and respawns at a certain location.
 	 */
@@ -162,8 +142,8 @@ public class Player extends GameObject{
 		//Set player y-position to middle of window
 		ySpeed = 0;
 		xSpeed = 0;
-		yPos = appletHeight*0.9;
-		xPos = appletWidth/2-width/2;
+		yPos = screenHeight*0.9;
+		xPos = screenWidth/2-width/2;
 		System.out.println("Player life: " + lives);
 	}
 	

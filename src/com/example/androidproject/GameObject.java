@@ -1,5 +1,9 @@
 package com.example.androidproject;
 
+import java.util.Timer;
+
+import android.graphics.Bitmap;
+
 /**
  * Class for each object visible 
  * @author Joel
@@ -10,34 +14,41 @@ public class GameObject {
 	protected int wait = -1;
 	protected int damage;
 	//Temporary
-	protected int appletWidth = 1280;
-	protected int appletHeight = 768;
+	protected int screenWidth;
+	protected int screenHeight;
 	protected int maxHealth;
 	protected double xPos;
 	protected double yPos;
-	protected int lives = 1;
-	protected int health;
+	protected int lives = 0;
+	protected int health = 1;
 	protected int width;
 	protected int height;
-	protected int attackCycle;
+	protected int collisionWidth;
+	protected int collisionHeight;
+	protected int attackFrequency;
 	protected int currentAttackCycle;
 	protected int collisionCooldown;
 	protected int tempColCooldown;
 	private int blinkCycle = 0;
 	protected boolean up, down, left, right;
 	protected boolean collideable;
-	protected boolean firing;
+	protected boolean firing = false;
 	protected boolean shotReady = false;
-	protected boolean reloaded;
+	protected boolean reloaded = false;
 	protected boolean blinking;
 	protected boolean visible = true;
+	protected boolean usingImageResource = false;
 	protected double acc;
 	protected double xSpeed;
 	protected double ySpeed;
 	protected double xSpeedMax;
 	protected double ySpeedMax;
-	protected double friction;
+	protected double friction = 1;
 	protected double maxAcc;
+	protected int imageResource;
+	protected Bitmap objectImage;
+	protected Timer tm;
+	protected GameObject bullet;
 	/**
 	 * Constructor
 	 * @param xPos_
@@ -54,7 +65,7 @@ public class GameObject {
 		width = width_;
 		height = height_;
 	}
-	public void init(){
+	protected void init(){
 		
 	}
 	/**
@@ -69,14 +80,12 @@ public class GameObject {
 	 */
 	public void refresh(){
 		//Update fire cycle
-		currentAttackCycle++;
-		if (currentAttackCycle >= attackCycle){
-			shotReady = true;
-			reloaded = true;
-			currentAttackCycle = 0;
+		if (currentAttackCycle < attackFrequency){
+			currentAttackCycle++;
+			reloaded = false;
 		}
-		else{
-			shotReady = false;
+		else if (currentAttackCycle >= attackFrequency){
+			reloaded = true;
 		}
 		move();
 		action();
@@ -107,18 +116,22 @@ public class GameObject {
 	 * @return
 	 */
 	protected static boolean collide(GameObject e, GameObject b){
-		if ((b.xPos + b.width) < (e.xPos)) 
-			return false; 
-		if (b.xPos > (e.xPos + e.width)) 
-			return false; 
-		if ((b.yPos + b.height) < (e.yPos)) 
-			return false; 
-		if (b.yPos > (e.yPos + e.height)) 
+		if ((b.xPos + b.width/2+b.collisionWidth/2) < (e.xPos+e.width/2-e.collisionWidth/2)) {
 			return false;
+		}
+		if (b.xPos+b.width/2-b.collisionWidth/2 > (e.xPos + e.width/2+e.collisionWidth/2)){
+			return false;
+		}
+		if ((b.yPos + b.height/2+b.collisionHeight/2) < (e.yPos+e.height/2-e.collisionHeight/2)) {
+			return false;
+		}
+		if (b.yPos + b.height/2-b.collisionHeight/2 > (e.yPos + e.height/2+e.collisionHeight/2)){
+			return false;
+		}
 		return true; 
 	}
 	/**
-	 * Method for handling the objects blinking (when e.g. taking damage)
+	 * Method for handling the objects blinking (e.g. when taking damage)
 	 */
 	private void toggleBlinking(){
 		//If blinking has been turned on and the unit is not collidable
@@ -156,14 +169,27 @@ public class GameObject {
 			//Reset the temporary collision cooldown
 			tempColCooldown = 0;
 			//Temp
-			System.out.println("DAMAGE: " + getClass() 
+			/*System.out.println("DAMAGE: " + getClass() 
 					+ "\nDamage: " + damage 
 					+ "\nHealth: " + health 
 					+ "\nMax Health: " + maxHealth
 					+ "\nLives: " + lives);
+					*/
+			
 		}
 		else{
 			loseLife();
+		}
+	}
+	/**
+	 * Check if player is collidable yet.
+	 */
+	protected void updateCollisionCooldown(){
+		if (tempColCooldown < collisionCooldown){
+			tempColCooldown++;
+		}
+		else{
+			collideable = true;
 		}
 	}
 	/**
@@ -174,14 +200,15 @@ public class GameObject {
 		down = false;
 		left = false;
 		right = false;
+		shotReady = false;
 	}
 	/**
 	 * Method for handling shooting
 	 */
 	protected void shoot(){
-//		System.out.println(getClass().toString());
-		if (shotReady == true && firing == true){
-			//Temp
+		if (shotReady && reloaded){
+			firing = true;
+			currentAttackCycle = 0;
 			//System.out.println("FIRE: " + getClass());
 		}
 		else{
@@ -191,10 +218,14 @@ public class GameObject {
 	 * Method for making the object lose a life and reset its health to max
 	 */
 	protected void loseLife(){
-		System.out.println(this.type + " LOST life");
+		//System.out.println(this.type + " LOST life");
 		lives--;
 		health = maxHealth;
 	}
+	/**
+	 * Increment speed in X axis
+	 * @param d
+	 */
 	protected void incrementXSpeed(double d){
 		if(d > 0){
 			if((xSpeed + maxAcc) <= xSpeedMax){
