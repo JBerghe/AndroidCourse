@@ -31,12 +31,12 @@ public class Player extends GameObject{
 		maxHealth = 3;
 		health = maxHealth;
 		lives = 2;
-		width = 40;
-		height = 40;
+		width = (int) (screenWidth*0.08);
+		height = width;
 		attackFrequency = 15;
 		currentAttackCycle = 0;
-		yPos = screenHeight-height;
-		xPos = screenWidth/2;
+		yPos = screenHeight*0.9-height;
+		xPos = screenWidth/2-width/2;
 		xSpeed = 0;
 		ySpeed = 0;
 		xSpeedMax = 7;
@@ -47,12 +47,12 @@ public class Player extends GameObject{
 		collisionHeight = 20;
 		collisionWidth = 30;
 		tempColCooldown = 0;
-		imageResource = R.drawable.test_image;
+		imageResource = R.drawable.player;
 		usingImageResource = true;
+		destroyDuration = 20;
 	}
 	@Override
 	protected void action(){
-		updateCollisionCooldown();
 		checkWait();
 		checkRespawn();
 	}
@@ -128,6 +128,7 @@ public class Player extends GameObject{
 		int time_ = 240;
 		wait(time_);
 		lives--;
+		shotReady = false;
 		health = maxHealth;
 		//Remove player's control of the plane
 		controllable = false;
@@ -166,7 +167,6 @@ public class Player extends GameObject{
 			controllable = true;
 			//Set timer to "pause-mode"
 			respawnTimer = -1;
-
 		}
 		//Count down timer
 		else if (respawnTimer > 0){

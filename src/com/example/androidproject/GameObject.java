@@ -12,23 +12,28 @@ import android.graphics.Bitmap;
 public class GameObject {
 	public String type;
 	protected int wait = -1;
-	protected int damage;
+	protected int damage = 1;
 	//Temporary
+	protected int appletWidth;
+	protected int appletHeight;
 	protected int screenWidth;
 	protected int screenHeight;
 	protected int maxHealth;
 	protected double xPos;
 	protected double yPos;
-	protected int lives = 0;
+	protected int lives = 1;
 	protected int health = 1;
 	protected int width;
 	protected int height;
 	protected int collisionWidth;
 	protected int collisionHeight;
 	protected int attackFrequency;
-	protected int currentAttackCycle;
-	protected int collisionCooldown;
+	protected int currentAttackCycle = 0;
+	protected int collisionCooldown = 5;
 	protected int tempColCooldown;
+	protected int destroyDuration = 1;
+	protected int blinkRefreshRate = 2;
+	protected int currentDestruction = 0;
 	private int blinkCycle = 0;
 	protected boolean up, down, left, right;
 	protected boolean collideable;
@@ -37,6 +42,7 @@ public class GameObject {
 	protected boolean reloaded = false;
 	protected boolean blinking;
 	protected boolean visible = true;
+	protected boolean destroyed = false;
 	protected boolean usingImageResource = false;
 	protected double acc;
 	protected double xSpeed;
@@ -91,6 +97,8 @@ public class GameObject {
 		action();
 		toggleBlinking();
 		shoot();
+		updateCollisionCooldown();
+		checkDestruction();
 	}
 	/**
 	 * Update speed and position
@@ -137,7 +145,7 @@ public class GameObject {
 		//If blinking has been turned on and the unit is not collidable
 		if (blinking && collideable == false){
 			//Blinking rate
-			if (blinkCycle <= 2){
+			if (blinkCycle <= blinkRefreshRate){
 				blinkCycle++;
 			}
 			//Every time the blinking cycle resets
@@ -280,6 +288,14 @@ public class GameObject {
 			else{
 				ySpeed = ySpeedMax*-1;
 			}
+		}
+	}
+	protected void checkDestruction(){
+		if (destroyed){
+			blinking = true;
+			collideable = false;
+			currentDestruction++;
+			blinkRefreshRate = 1;
 		}
 	}
 }

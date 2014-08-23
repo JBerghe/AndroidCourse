@@ -1,5 +1,14 @@
 package com.example.androidproject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 
 import android.app.Activity;
@@ -22,7 +31,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
-import java.lang.*;
 
 public class GameActivity extends Activity {
 	GameSession gs;
@@ -45,6 +53,9 @@ public class GameActivity extends Activity {
 		gs = new GameSession(this, screenWidth, screenHeight);
 		//Set content view to game session
 		setContentView(gs);
+		if (gs.finished){
+			finish();
+		}
 	}
 	@Override
 	protected void onResume() {
@@ -61,34 +72,35 @@ public class GameActivity extends Activity {
 	public class GameSession extends SurfaceView implements Runnable, SensorEventListener{
 		/**
 		 * TODO:
-		 * [?] Separate thread for drawing images (Fixed?)
 		 * [X] Remove auto-sleep
-		 * [ ] Dynamic background
-		 * [ ] Dynamic object size
-		 * [ ] Add starting background clouds
-		 * [/] Dynamic collision, player/bullet/power-ups
+		 * [X] Dynamic background
+		 * [X] Dynamic object size
+		 * [X] Add starting background clouds
+		 * [X] Dynamic collision, player/bullet/power-ups
 		 * [X] Implement collision size
-		 * 
-		 * 
-		 * 
+		 * [O] Add death (blinking) animation
+		 * [ ] Change image of flipped enemies
+		 * [ ] Sort enemy list
+		 * [ ] Only check first enemy in level list
 		 * 
 		 * FIX (REQ)
-		 * [ ] Change enemy generator to generate enemy classes
-		 * [ ] Fix background circle array list
-		 * [/] Create all images at beginning of game
+		 * [X] Change enemy generator to generate enemy classes
+		 * [X] Fix background circle array list
+		 * [X] Create all images at beginning of game
 		 * 
 		 */
 		//Declare all variables
-		private int appletWidth, appletHeight, appletPadding;
+		private int appletWidth, appletHeight, appletPadding, timeCounter;
 		private boolean running = false;
+		private boolean finished = false;
 		private ArrayList<GameObject> allyList;
 		private ArrayList<GameObject> enemyList;
 		private ArrayList<GameObject> backgroundObjects;
 		private ArrayList<ObjectImage> objectImages;
 		@SuppressWarnings("rawtypes")
 		private ArrayList<ArrayList> listCollection;
+		private ArrayList<EnemyInfo> levelEnemies;
 		private Player player;
-		private EnemyGenerator enemyGen;
 		private Bitmap bitmap;
 		private Paint paint = new Paint();
 		private long timeMs;
@@ -101,6 +113,12 @@ public class GameActivity extends Activity {
 		private float origX, origY, gyroX, gyroY;
 		private double minimumSteeringThreshold;
 		private boolean gyroSet = false;
+		private boolean scoreUpdated = false;
+		private int endingTimer = 0;
+		private int endingDuration = 400;
+		private double fadeOutAlpha = 0;
+		private int score = 0;
+		private int playerBulletCount = 0;
 
 		@SuppressWarnings("rawtypes")
 		public GameSession(Context context, int appletWidth_, int appletHeight_){
@@ -111,6 +129,8 @@ public class GameActivity extends Activity {
 			running = true;
 			//Set thread sleep time (60 FPS)
 			sleepTime = 1000/60;
+			//Set game counter
+			timeCounter = 0;
 			//Set on touch listener
 			setOnTouchListener(new View.OnTouchListener(){
 				@Override
@@ -123,7 +143,7 @@ public class GameActivity extends Activity {
 
 					}
 					//Triggers when user touches screen
-					if(event.getAction() == MotionEvent.ACTION_DOWN){
+					if(event.getAction() == MotionEvent.ACTION_DOWN && player.controllable){
 						player.shotReady = true;
 						return true;
 					}
@@ -137,6 +157,7 @@ public class GameActivity extends Activity {
 				}
 
 			});
+
 			//Set applet width
 			appletWidth = appletWidth_;
 			appletHeight = appletHeight_;
@@ -149,7 +170,7 @@ public class GameActivity extends Activity {
 			//Register listener for sensor
 			sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME);
 			//Initialize enemy generator
-			enemyGen = new EnemyGenerator(appletWidth, appletHeight);
+			//enemyGen = new EnemyGenerator(appletHeight);
 			//Set amount of maximum background objects
 			backgroundAmount = 200;
 			//Initialize game object lists
@@ -157,6 +178,7 @@ public class GameActivity extends Activity {
 			allyList = new ArrayList<GameObject>();
 			enemyList = new ArrayList<GameObject>();
 			listCollection = new ArrayList<ArrayList>();
+			levelEnemies = new ArrayList<EnemyInfo>();
 			//Initialize time in ms
 			timeMs = System.currentTimeMillis() % 1000;
 			listCollection.add(backgroundObjects);
@@ -169,15 +191,14 @@ public class GameActivity extends Activity {
 			player = new Player(appletWidth, appletHeight);
 			//Add player to ally list
 			allyList.add(player);
-
 			//Set threshold for when tilting the pad will update speed
 			minimumSteeringThreshold = 0.5;
+			//TEST
+			initLevel(R.raw.level1);
 			//Initiate all game images
 			initGameImages();
-			//Test--> 		TEST 
+			//Initate background
 			initBackground();
-			createEnemy(enemyType.enemy1, 100);
-
 
 		}
 		/**
@@ -201,7 +222,7 @@ public class GameActivity extends Activity {
 				//Calculate work time	
 				int timeDiff = (int) ((System.currentTimeMillis() % 1000) - timeMs);
 				//System.out.print("Diff: " + timeDiff + " Sleep: " + (sleepTime-timeDiff));
-				//Only sleep if work time is less than sleep time
+				//Only sleep if work time is less than maximum sleep time
 				try{
 					if (timeDiff > 0 && timeDiff <= sleepTime){
 						//Refresh rate (sleep for X milliseconds)
@@ -275,25 +296,17 @@ public class GameActivity extends Activity {
 
 					}
 					//Health handling
-					if (object.health <= 0){
+					if (object.currentDestruction > object.destroyDuration){
+						
+						
 						//Remove object from list
 						list.remove(object);
-						if (object.type.equals(player)){
+						if (object.getClass().equals(Player.class.getClass())){
 							//Player is removed, exit game
 							System.out.println("REMOVED PLAYER");
 							//EXIT GAME
-
-
-
-
-
-
+						
 						}
-						//Test->					Test
-
-
-						//createEnemy(enemyType.enemy1, 400);
-						//System.out.println("DESTROYED: " + object.getClass().toString());
 					}
 					//Unit that are inside window do their actions
 					else{
@@ -301,13 +314,30 @@ public class GameActivity extends Activity {
 						object.refresh();
 						//Check if unit is firing
 						if(object.firing){
-							//FIX-->					Check where to add bullet
-							//Test-->					Temporary bullet
-							Bullet1 b = new Bullet1("ally");
+							if (object.getClass().equals(Player.class.getClass())){
+								playerBulletCount++;
+							}
+							Bullet1 b = new Bullet1(object.type, appletWidth, appletHeight);
 							b.xPos = object.xPos+object.width/2-b.width/2;
 							b.yPos = object.yPos+object.height-b.height;
-							allyList.add(b);
+							switch (object.type){
+							//Object is player
+							case "ally":
+								allyList.add(b);
+								break;
+								//Object is an enemy
+							case "enemy":
+								enemyList.add(b);
+								break;
+							}
+							
+							
 							object.firing = false;
+						}
+						//Object has no more health, destroy
+						if(object.health <= 0){
+							//Object is blinking (indicating destruction)
+							object.destroyed = true;
 						}
 					}
 				}
@@ -327,6 +357,17 @@ public class GameActivity extends Activity {
 			else{
 
 			}
+			//Check if level has ended
+			if(levelEnemies.size() == 0 && enemyList.size() == 0){
+				
+				
+			}
+			//Update time counter
+			timeCounter++;
+			//Check whether or not to add new enemies to game
+			checkEnemyAddition();
+			//Check if enemies are left to be added
+			endingSequence();
 		}
 		/**
 		 * Draw all objects in the game on the canvas
@@ -335,10 +376,7 @@ public class GameActivity extends Activity {
 		protected void drawObjects(Canvas canvas) {
 			//Set background
 			canvas.drawColor(Color.BLACK);
-
-
-
-			//Test-->		TEst circle
+			//Set color for background objects
 			paint.setColor(Color.WHITE);
 
 			//iterate through each object list
@@ -354,23 +392,42 @@ public class GameActivity extends Activity {
 								for (ObjectImage bm: objectImages){
 									if(object.imageResource == bm.getResource()){
 										bitmap = bm.getBitmap();
-										object.objectImage = Bitmap.createScaledBitmap(bitmap, object.width, object.height, true);
+										object.objectImage = 
+												Bitmap.createScaledBitmap(
+														bitmap, object.width, 
+														object.height, true);
 									}
-									
+
 								}
 							}
 							//Draw the image on the canvas
-							canvas.drawBitmap(object.objectImage, (float) object.xPos, (float) object.yPos, paint);
+							canvas.drawBitmap(
+									object.objectImage, (float) object.xPos, 
+									(float) object.yPos, paint);
 						}else{
-							//Fix-->						Set alpha to background circle
 							paint.setAlpha(((BackgroundCircle) object).getAlpha());
-							canvas.drawCircle((float)object.xPos, (float)object.yPos, object.width, paint);
+							canvas.drawCircle((float)object.xPos, 
+									(float)object.yPos, object.width, paint);
 							paint.setAlpha(255);
 						}
+						
 					}
 				}
 			}
-
+			if(fadeOutAlpha > 0){
+				paint.setColor(Color.BLACK);
+				if (fadeOutAlpha <= 255){
+					paint.setAlpha((int) fadeOutAlpha);
+					
+				}else{
+					paint.setAlpha(255);
+				}
+				canvas.drawRect(0, 0, appletWidth, appletHeight, paint);
+				if (fadeOutAlpha > 200){
+					paint.setColor(Color.WHITE);
+					canvas.drawText("Score: " + score, appletWidth/2, appletHeight/2, paint);
+				}
+			}
 		}
 		/**
 		 * Update the origin values for steering
@@ -401,18 +458,6 @@ public class GameActivity extends Activity {
 			}
 		}
 		/**
-		 * Method for adding a new enemy to the game.
-		 * @param id_
-		 * @param yPos_
-		 */
-		private void createEnemy(enemyType id_, int xPos_){
-			enemyList.add(enemyGen.getEnemy(id_, xPos_));
-		}
-		@SuppressWarnings("unused")
-		private void createFlippedEnemy(enemyType id_, int xPos_){
-			enemyList.add(enemyGen.getFlippedEnemy(id_, xPos_));
-		}
-		/**
 		 * Perform collision check between two objects
 		 * @param ob1
 		 * @param ob2
@@ -422,7 +467,8 @@ public class GameActivity extends Activity {
 				if (ob1.collideable && ob2.collideable){
 					ob1.takeDamage(ob2.damage);
 					ob2.takeDamage(ob1.damage);
-					System.out.println(ob1  + "\n" + ob2);
+					//Increase score
+					score += 100;
 				}
 			}
 		}
@@ -441,7 +487,6 @@ public class GameActivity extends Activity {
 				if ((origY +minimumSteeringThreshold < gyroY)
 						|| (origY -minimumSteeringThreshold > gyroY)){
 					player.incrementYSpeed((origY*0.4-gyroY*0.4)*-1);
-					//System.out.println("OrigY: " + origY + "Gyro: " + gyroY);
 				}
 			} 
 		}
@@ -457,18 +502,18 @@ public class GameActivity extends Activity {
 
 		}
 		private void initGameImages(){
-			/*
-			 *FIX-->
-			 * 
-			 * 
-			 * GET ALL BITMAPS IN FOLDER
-			 */
 			objectImages = new ArrayList<ObjectImage>();
 			Bitmap bm = BitmapFactory.decodeResource(getResources(), R.drawable.bullet);
 			ObjectImage objectImage = new ObjectImage(bm, R.drawable.bullet);
 			objectImages.add(objectImage);
-			bm = BitmapFactory.decodeResource(getResources(), R.drawable.test_image);
-			objectImage = new ObjectImage(bm, R.drawable.test_image);
+			bm = BitmapFactory.decodeResource(getResources(), R.drawable.player);
+			objectImage = new ObjectImage(bm, R.drawable.player);
+			objectImages.add(objectImage);
+			bm = BitmapFactory.decodeResource(getResources(), R.drawable.enemy1);
+			objectImage = new ObjectImage(bm, R.drawable.enemy1);
+			objectImages.add(objectImage);
+			bm = BitmapFactory.decodeResource(getResources(), R.drawable.enemy2);
+			objectImage = new ObjectImage(bm, R.drawable.enemy2);
 			objectImages.add(objectImage);
 		}
 		/**
@@ -507,7 +552,140 @@ public class GameActivity extends Activity {
 				backgroundObjects.add(bc);
 			}
 		}
+		/**
+		 * Loads all enemies used for the level from a file.
+		 * @param resource the file resource used
+		 */
+		private void initLevel(int resource){
+			//Initalize input stream to read enemy list file
+			InputStream is = getResources().openRawResource(resource);
+			//String to store each lines
+			String line;
+			//Class to store info of enemy
+			EnemyInfo enemyInfo = new EnemyInfo();
+			int enemyDistanceSpread = 0;
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			try{ 
+				while((line = br.readLine()) != null){
+					//Split the line to an array containing the enemy info
+					String[] structuredInfo = line.split("#");
+					double currentXPos = 0;
+					int currentSpread = 0;
+					//Check the amount of enemies added in the group
+					int groupAmount = Integer.parseInt(structuredInfo[0]);
+					//Set current x position
+					currentXPos = (double)(appletWidth*((Double.parseDouble(structuredInfo[4])/100)));
+					//Set spread between enemies
+					enemyDistanceSpread = (int) (appletWidth*((Double.parseDouble(structuredInfo[5])/100)));
+					//iterate and add enemies equal to the group amount
+					for (int i = 0; i < groupAmount; i++){
+						enemyInfo = new EnemyInfo();
+						//Declare time
+						enemyInfo.time = Integer.parseInt(structuredInfo[1]);
+						//Declare enemy type
+						switch (structuredInfo[2]){
+							case "en1":
+								enemyInfo.enemy = new En1(appletWidth, appletHeight);
+								break;
+							case "en2":
+								enemyInfo.enemy = new En2(appletWidth, appletHeight);
+								break;
+						}
+						//Check if enemy comes from top or bottom
+						if(structuredInfo[3].equals("t")){
+							enemyInfo.flipped = true;
+						}else{
+							enemyInfo.flipped = false;
+						}
+						//Fix position of first enemy in each group
+						if (i == 0){
+							currentXPos -= enemyInfo.enemy.width/2;
+						}
+						//Set x pos
+						enemyInfo.enemy.xPos = currentXPos;
+						//Increase spread
+						currentSpread += enemyDistanceSpread;
+						if (i%2 != 0){
+							currentXPos -= currentSpread;
+						}else{
+							currentXPos += currentSpread;
+						}
+						//Set x speed
+						enemyInfo.enemy.xSpeed = Double.parseDouble(structuredInfo[6]);
+						//Add to enemy level list
+						levelEnemies.add(enemyInfo);
+					}
+				}
+				br.close();
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		/**
+		 * Check the list of enemies to be added.
+		 */
+		@SuppressWarnings("unchecked")
+		private void checkEnemyAddition(){
+			for (EnemyInfo enemyInfo: (ArrayList<EnemyInfo>) levelEnemies.clone()){
+				if(enemyInfo.time == timeCounter){
+					//enemyInfo.enemy.init();
+					//Set enemy parameters
+					if (enemyInfo.flipped){
+						enemyInfo.enemy.ySpeed *= -1;
+						enemyInfo.enemy.yPos = appletHeight+enemyInfo.enemy.height;
+						enemyInfo.enemy.xSpeed *= -1;
+					}else{
+						enemyInfo.enemy.yPos = enemyInfo.enemy.height*-1;
+					}
+					//Add enemy to game
+					enemyList.add(enemyInfo.enemy);
+					enemyInfo.enemy.init();
+					levelEnemies.remove(enemyInfo);
+				}
+			}
+		}
+		private void endingSequence(){
+			if((levelEnemies.size() == 0 && enemyList.size() == 0) || (!allyList.contains(player))){
+				endingTimer++;
+				if (scoreUpdated = false){
+					score = calculateScore();
+					scoreUpdated = true;
+				}
+				if (endingTimer > 150 && fadeOutAlpha <= 255){
+					fadeOutAlpha += 2;
+				}
+				if(endingTimer > endingDuration){
+					//Exit game
+					finish();
+				}
+				
+			}
+		}
+		private int calculateScore(){
+			int healthScore = player.health * 150;
+			int lifeScore = player.lives * 200;
+			int bulletScore = playerBulletCount * -2;
+			int finalScore = score + healthScore + lifeScore + bulletScore;
+			if(finalScore < 0){
+				finalScore = 0;
+			}
+			return finalScore;
+		}
 	}
-
+	/**
+	 * Class containing an enemy and a variable for when 
+	 * the enemy is to be added to the game session.
+	 * @author Joel
+	 *
+	 */
+	private class EnemyInfo{
+		GameObject enemy;
+		boolean flipped = false;
+		int time;
+		public EnemyInfo(){
+		}
+	}
+	
 }
 

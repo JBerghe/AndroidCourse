@@ -68,10 +68,19 @@
         <FrameLayout
             android:id="@+id/info_screen"
             style="?metaButtonBarStyle"
-            android:layout_width="50dp"
+            android:layout_width="150dp"
             android:layout_height="match_parent"
             android:layout_gravity="right"
             android:background="@color/black_overlay" >
+
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:text="@string/info"
+                android:textSize="@dimen/infoSize" />
+
         </FrameLayout>
     </FrameLayout>
 

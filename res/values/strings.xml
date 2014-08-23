@@ -6,5 +6,8 @@
     <string name="info_button">Info</string>
     <string name="title_activity_game">GameActivity</string>
     <string name="hello_world">Hello world!</string>
-
+	<string name="info">How to play:\n
+	    1. Hold tablet at desired angle\n
+	    2. Press play\n
+	    3. Tilt screen to steer, touch screen to fire</string>
 </resources>
